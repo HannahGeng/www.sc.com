@@ -1,47 +1,60 @@
 <?php if (!defined('THINK_PATH')) exit();?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-<title>ECSHOP 管理中心 - 商品列表 </title>
+<title>管理中心 - 商品列表 </title>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <link href="/Public/Admin/Styles/general.css" rel="stylesheet" type="text/css" />
 <link href="/Public/Admin/Styles/main.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="/Public/umeditor1_2_2-utf8-php/third-party/jquery.min.js"></script>
 </head>
 <body>
 <h1>
-    <span class="action-span"><a href="__GROUP__/Goods/goodsAdd">添加新商品</a></span>
-    <span class="action-span1"><a href="__GROUP__">ECSHOP 管理中心</a></span>
-    <span id="search_id" class="action-span1"> - 商品列表 </span>
+	<?php if($_page_btn_name): ?>
+    <span class="action-span"><a href="<?php echo $_page_btn_link; ?>"><?php echo $_page_btn_name; ?></a></span>
+    <?php endif; ?>
+    <span class="action-span1"><a href="#">管理中心</a></span>
+    <span id="search_id" class="action-span1"> - <?php echo $_page_title; ?> </span>
     <div style="clear:both"></div>
 </h1>
+
+<!--  内容  -->
+
+
+<!--搜索表单-->
 <div class="form-div">
-    <form action="" name="searchForm">
-        <img src="/Public/Admin/Images/icon_search.gif" width="26" height="22" border="0" alt="search" />
-        <!-- 分类 -->
-        <select name="cat_id">
-            <option value="0">所有分类</option>
-            <?php if(is_array($cat_list)): foreach($cat_list as $key=>$val): ?><option value="<<?php echo ($val["cat_id"]); ?>>"><<?php echo (str_repeat('&nbsp;&nbsp;',$val["lev"])); ?>><<?php echo ($val["cat_name"]); ?>></option><?php endforeach; endif; ?>
-        </select>
-        <!-- 品牌 -->
-        <select name="brand_id">
-            <option value="0">所有品牌</option>
-            <?php if(is_array($brand_list)): foreach($brand_list as $key=>$val): ?><option value="<<?php echo ($val["brand_id"]); ?>>"><<?php echo ($val["brand_name"]); ?>></option><?php endforeach; endif; ?>
-        </select>
-        <!-- 推荐 -->
-        <select name="intro_type">
-            <option value="0">全部</option>
-            <option value="is_best">精品</option>
-            <option value="is_new">新品</option>
-            <option value="is_hot">热销</option>
-        </select>
-        <!-- 上架 -->
-        <select name="is_on_sale">
-            <option value=''>全部</option>
-            <option value="1">上架</option>
-            <option value="0">下架</option>
-        </select>
-        <!-- 关键字 -->
-        关键字 <input type="text" name="keyword" size="15" />
-        <input type="submit" value=" 搜索 " class="button" />
+    <form action="/index.php/Admin/Goods/lst" method="GET" name="searchForm">
+        <P>
+            商品名称：
+            <input value="<?php echo I('get.gn'); ?>" type="text" name="gn" size="60" />
+        </P>
+        <P>
+            价　　格：
+            从<input value="<?php echo I('get.fp'); ?>" type="text" name="fp" size="8" />
+            到<input value="<?php echo I('get.tp'); ?>" type="text" name="tp" size="8" />
+        </P>
+        <P>
+            是否上架：
+            <?php $ios = I('get.ios'); ?>
+            <input type="radio" name="ios" value="" <?php if($ios == '') echo 'checked="checked"'; ?> /> 全部
+            <input type="radio" name="ios" value="是" <?php if($ios == '是') echo 'checked="checked"'; ?> /> 上架
+            <input type="radio" name="ios" value="否" <?php if($ios == '否') echo 'checked="checked"'; ?> /> 下架
+        </P>
+        <P>
+            添加时间：
+            从<input type="text" id="fa" name="fa" value="<?php echo I('get.fa'); ?>" size="20" />
+            到<input type="text" id="ta" name="ta" value="<?php echo I('get.ta'); ?>" size="20" />
+        </P>
+        <p>
+            排序方式：
+            <?php $obdy = I('get.odby', 'id_desc'); ?>
+            <input onclick="this.parentNode.parentNode.submit();" type="radio" name="odby" value="id_desc" <?php if($obdy == 'id_desc') echo 'checked="checked"'; ?> /> 以添加时间降序
+            <input onclick="this.parentNode.parentNode.submit();" type="radio" name="odby" value="id_asc" <?php if($obdy == 'id_asc') echo 'checked="checked"'; ?> /> 以添加时间升序
+            <input onclick="this.parentNode.parentNode.submit();" type="radio" name="odby" value="price_desc" <?php if($obdy == 'price_desc') echo 'checked="checked"'; ?> /> 以价格降序
+            <input onclick="this.parentNode.parentNode.submit();" type="radio" name="odby" value="price_asc" <?php if($obdy == 'price_asc') echo 'checked="checked"'; ?> /> 以价格升序
+        </p>
+        <P>
+            <input type="submit" value="搜索" />
+        </P>
     </form>
 </div>
 
@@ -52,40 +65,36 @@
             <tr>
                 <th>编号</th>
                 <th>商品名称</th>
-                <th>货号</th>
-                <th>价格</th>
+                <th>logo</th>
+                <th>市场价格</th>
+                <th>本店价格</th>
                 <th>上架</th>
-                <th>精品</th>
-                <th>新品</th>
-                <th>热销</th>
-                <th>推荐排序</th>
-                <th>库存</th>
+                <th>添加时间</th>
                 <th>操作</th>
             </tr>
-            <?php if(is_array($list)): foreach($list as $key=>$val): ?><tr>
-                <td align="center"><<?php echo ($val["goods_id"]); ?>></td>
-                <td align="center" class="first-cell"><span><<?php echo ($val["goods_name"]); ?>></span></td>
-                <td align="center"><span onclick=""><<?php echo ($val["goods_sn"]); ?>></span></td>
-                <td align="center"><span><<?php echo ($val["shop_price"]); ?>></span></td>
-                <td align="center"><img src="<?php if(($val["is_onsale"] == 1)): ?>./Images/yes.gif <?php else: ?> ./Images/no.gif<?php endif; ?>"/></td>
-                <td align="center"><img src="<?php if(($val["is_best"] == 1)): ?>./Images/yes.gif <?php else: ?> ./Images/no.gif<?php endif; ?>"/></td>
-                <td align="center"><img src="<?php if(($val["is_new"] == 1)): ?>./Images/yes.gif <?php else: ?> ./Images/no.gif<?php endif; ?>"/></td>
-                <td align="center"><img src="<?php if(($val["is_hot"] == 1)): ?>./Images/yes.gif <?php else: ?> ./Images/no.gif<?php endif; ?>"/></td>
-                <td align="center"><span>100</span></td>
-                <td align="center"><span><<?php echo ($val["goods_number"]); ?>></span></td>
+            <?php foreach ($data as $k => $v): ?>
+            <tr class="tron">
+                <td align="center"><?php echo $v['id']; ?></td>
+                <td align="center" class="first-cell"><span><?php echo $v['goods_name']; ?></span></td>
+                <td align="center"><img src="/Public/Uploads/<?php echo $v['sm_logo']; ?>" /></td>
+                <td align="center"><?php echo $v['market_price']; ?></td>
+                <td align="center"><?php echo $v['shop_price']; ?></td>
+                <td align="center"><?php echo $v['is_on_sale']; ?></td>
+                <td align="center"><?php echo $v['addtime']; ?></td>
                 <td align="center">
-                <a href="/index.php/Goods/?goods_id=<<?php echo ($val["goods_id"]); ?>>" target="_blank" title="查看"><img src="./Images/icon_view.gif" width="16" height="16" border="0" /></a>
-                <a href="__GROUP__/Goods/goodsEdit?goods_id=<<?php echo ($val["goods_id"]); ?>>" title="编辑"><img src="./Images/icon_edit.gif" width="16" height="16" border="0" /></a>
-                <a href="__GROUP__/Goods/goodsTrash?goods_id=<<?php echo ($val["goods_id"]); ?>>" onclick="" title="回收站"><img src="./Images/icon_trash.gif" width="16" height="16" border="0" /></a></td>
-            </tr><?php endforeach; endif; ?>
+                    <a href="<?php echo U('edit?id='.$v['id']); ?>">修改</a>
+                    <a onclick="return confirm('确定要删除吗？');" href="<?php echo U('delete?id='.$v['id']); ?>">删除</a>
+                </td>
+            </tr>
+            <?php endforeach; ?>
         </table>
 
-    <!-- 分页开始 -->
+        <!-- 分页开始 -->
         <table id="page-table" cellspacing="0">
             <tr>
                 <td width="80%">&nbsp;</td>
                 <td align="center" nowrap="true">
-                    <<?php echo ($showPage); ?>>
+                    <?php echo $page; ?>
                 </td>
             </tr>
         </table>
@@ -93,8 +102,23 @@
     </div>
 </form>
 
-<div id="footer">
-共执行 7 个查询，用时 0.028849 秒，Gzip 已禁用，内存占用 3.219 MB<br />
-版权所有 &copy; 2005-2012 上海商派网络科技有限公司，并保留所有权利。</div>
+<!-- 引入时间插件 -->
+<link href="/Public/datetimepicker/jquery-ui-1.9.2.custom.min.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" charset="utf-8" src="/Public/datetimepicker/jquery-ui-1.9.2.custom.min.js"></script>
+<script type="text/javascript" charset="utf-8" src="/Public/datetimepicker/datepicker-zh_cn.js"></script>
+<link rel="stylesheet" media="all" type="text/css" href="/Public/datetimepicker/time/jquery-ui-timepicker-addon.min.css" />
+<script type="text/javascript" src="/Public/datetimepicker/time/jquery-ui-timepicker-addon.min.js"></script>
+<script type="text/javascript" src="/Public/datetimepicker/time/i18n/jquery-ui-timepicker-addon-i18n.min.js"></script>
+<script>
+    // 添加时间插件
+    $.timepicker.setDefaults($.timepicker.regional['zh-CN']);  // 设置使用中文
+
+    $("#fa").datetimepicker();
+    $("#ta").datetimepicker();
+</script>
+<!-- 引入行高亮显示 -->
+<script type="text/javascript" src="/Public/Admin/Js/tron.js"></script>
+
+<div id="footer"> 39期 </div>
 </body>
 </html>

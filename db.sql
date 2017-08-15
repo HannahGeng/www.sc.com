@@ -23,3 +23,13 @@ create table p39_goods
 	key addtime(addtime),
 	key is_on_sale(is_on_sale)
 )engine=InnoDB default charset=utf8 comment '商品';
+
+drop table if exists p39_brand;
+create table p39_brand
+(
+	id mediumint unsigned not null auto_increment comment 'Id',
+	brand_name varchar(30) not null comment '品牌名称',
+	site_url varchar(150) not null default '' comment '官方网址',
+	logo varchar(150) not null default '' comment '品牌Logo图片',
+	primary key (id)
+)engine=InnoDB default charset=utf8 comment '品牌';
