@@ -34,13 +34,24 @@ class GoodsController extends Controller
             $this->error($error);
         }
 
-        //显示表单
+        //取出所有的品牌
+        $brandModel = D('brand');
+        $brandData = $brandModel->select();
+
+        //取出所有的会员级别
+        $mlModel = D('member_level');
+        $mlData = $mlModel->select();
+
         // 设置页面信息
         $this->assign(array(
+            'brandData'   => $brandData,
+            'mlData'      => $mlData,
             '_page_title' => '添加新商品',
             '_page_btn_name' => '商品列表',
             '_page_btn_link' => U('lst'),
         ));
+
+        //显示表单
         $this->display();
     }
 
@@ -97,6 +108,38 @@ class GoodsController extends Controller
         $data = $model->find($id);
 
         $this->assign('data',$data);
+
+        //取出所有的会员级别
+        $mlModel = D('member_level');
+        $mlData = $mlModel->select();
+
+        //取出这件商品已经设置好的会员价格
+        $mpModel = D('member_price');
+        $mpData = $mpModel->where(array(
+            'goods_id' => array('eq',$id),
+        ))->select();
+
+        //二维数组转一维数组
+        $_mpData = array();
+        foreach($mpData as $k => $v)
+        {
+            $_mpData[$v['level_id']] = $v['price'];
+        }
+
+
+        //取出所有品牌
+        $brandModel = D('brand');
+        $brandData = $brandModel->select();
+
+        $this->assign(array(
+                'mlData'    => $mlData,
+                'mpData'    => $_mpData,
+                'brandData' => $brandData,
+                '_page_title' => '修改商品',
+                '_page_btn_name' => '商品列表',
+                '_page_btn_link' => U('lst'),
+            )
+        );
 
         //显示表单
         $this->display();

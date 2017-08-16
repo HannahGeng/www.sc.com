@@ -1,5 +1,28 @@
 <?php
 
+/**
+ * 使用一个表中的数据制作下拉框
+ *
+ */
+function buildSelect($tableName, $selectName, $valueFieldName, $textFieldName, $selectedValue = '')
+{
+    $model = D($tableName);
+    $data = $model->field("$valueFieldName,$textFieldName")->select();
+    $select = "<select name='$selectName'><option value=''>请选择</option>";
+    foreach ($data as $k => $v)
+    {
+        $value = $v[$valueFieldName];
+        $text = $v[$textFieldName];
+        if($selectedValue && $selectedValue==$value)
+            $selected = 'selected="selected"';
+        else
+            $selected = '';
+        $select .= '<option '.$selected.' value="'.$value.'">'.$text.'</option>';
+    }
+    $select .= '</select>';
+    echo $select;
+}
+
 function deleteImage($image = array())
 {
 $savePath = C('IMAGE_CONFIG');
