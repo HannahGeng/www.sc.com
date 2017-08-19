@@ -5,13 +5,14 @@ use Think\Model;
 class GoodsModel extends Model
 {
     //添加时调用create方法允许接受的字段
-    protected $insertFields = 'brand_id,goods_name,market_price,shop_price,is_on_sale,goods_desc';
+    protected $insertFields = 'brand_id,goods_name,market_price,shop_price,is_on_sale,goods_desc,cat_id';
 
     //修改时调用create方法允许接受的字段
-    protected $updateFields = 'brand_id,id,goods_name,market_price,shop_price,is_on_sale,goods_desc';
+    protected $updateFields = 'brand_id,id,goods_name,market_price,shop_price,is_on_sale,goods_desc,cat_id';
 
     //定义验证规则
     protected $_validate = array(
+        array('cat_id','require','必须选择主分类！',1),
         array('goods_name','require','商品名称不能为空',1),
         array('market_price','currency','市场价格必须是货币类型！',1),
         array('shop_price','currency','本店价格必须是货币类型！',1),
@@ -49,6 +50,44 @@ class GoodsModel extends Model
     protected function _before_update(&$data, $options)
     {
         $id = $options['where']['id'];//要修改的商品id
+        if (isset($_FILES['pic']))
+        {
+            $pics = array();
+            foreach ($_FILES['pic']['name'] as $k => $v)
+            {
+                $pics[] = array(
+                    'name' => $v,
+                    'type' => $_FILES['pic']['type'][$k],
+                    'tmp_name' => $_FILES['pic']['tmp_name'][$k],
+                    'error' => $_FILES['pic']['error'][$k],
+                    'size' => $_FILES['pic']['size'][$k],
+                );
+            }
+
+            $_FILES = $pics;
+            $gpModel = D('goods_pic');
+
+            //循环每个上传
+            foreach ($pics as $k => $v)
+            {
+                $ret = uploadOne($k,'Goods',array(
+                    array(650,650),
+                    array(350,350),
+                    array(50,50),
+                ));
+
+                if ($ret['ok'] == 1)
+                {
+                    $gpModel->add(array(
+                        'pic' => $ret['images'][0],
+                        'big_pic' => $ret['images'][1],
+                        'mid_pic' => $ret['images'][2],
+                        'sm_pic' => $ret['images'][3],
+                        'goods_id' => $id,
+                    ));
+                }
+            }
+        }
 
         //处理会员价格
         $mp = I('post.member_price');
@@ -68,6 +107,27 @@ class GoodsModel extends Model
                 $mpModel->add(array(
                     'price' => $_v,
                     'level_id' => $k,
+                    'goods_id' => $id,
+                ));
+            }
+        }
+
+        /********************处理扩展分类**********************/
+        $ecid = I('post.ext_cat_id');
+        $gcModel = D('goods_cat');
+        //先删除原分类数据
+        $gcModel->where(array(
+            'goods_id' => array('eq',$id),
+        ))->delete();
+
+        if ($ecid)
+        {
+            foreach($ecid as $k => $v)
+            {
+                if (empty($v))
+                    continue;
+                $gcModel->add(array(
+                    'cat_id' => $v,
                     'goods_id' => $id,
                 ));
             }
@@ -100,7 +160,30 @@ class GoodsModel extends Model
 
     protected function _before_delete($options)
     {
-        $id = $options['where']['id'];
+        $id = $options['where']['id'];//要删除的商品id
+
+        /************删除扩展分类**********/
+        $gcModel = D('goods_cat');
+        $gcModel->where(array(
+           'goods_id' => array('eq',$id),
+        ))->delete();
+
+        /************删除相册中的图片**********/
+        $gpModel = D('goods_pic');
+        $pics = $gpModel->field('pic,sm_pic,mid_pic,big_pic')->where(array(
+            'goods_id' => array('eq',$id),
+        ))->select();
+
+        //循环每个图片从硬盘上删除
+        foreach ($pics as $k => $v)
+        {
+            deleteImage($v);
+
+            //从数据库中把图片删除
+            $gpModel->where(array(
+                'goods_id' => array('eq',$id),
+            ))->delete();
+        }
 
         //先查询出图片的路径
         $oldLogo = $this->field('logo,mbig_logo,big_logo,mid_logo,sm_logo')->find($id);
@@ -116,6 +199,64 @@ class GoodsModel extends Model
     //商品添加之后毁掉用这个方法
     protected function _after_insert($data, $options)
     {
+        /********处理扩展分类*********/
+        $ecid = I('post.ext_cat_id');
+        if ($ecid)
+        {
+            $gcModel = D('goods_cat');
+            foreach($ecid as $k => $v)
+            {
+                if (empty($v))
+                    continue;
+                $gcModel->add(array(
+                    'cat_id' => $v,
+                    'goods_id' => $data['id'],
+                ));
+
+            }
+        }
+
+        /********处理相册图片*********/
+        if (isset($_FILES['pic']))
+        {
+            $pics = array();
+            foreach ($_FILES['pic']['name'] as $k => $v)
+            {
+                $pics[] = array(
+                    'name' => $v,
+                    'type' => $_FILES['pic']['type'][$k],
+                    'tmp_name' => $_FILES['pic']['tmp_name'][$k],
+                    'error' => $_FILES['pic']['error'][$k],
+                    'size' => $_FILES['pic']['size'][$k],
+                );
+            }
+
+            $_FILES = $pics;
+            $gpModel = D('goods_pic');
+
+            //循环每个上传
+            foreach ($pics as $k => $v)
+            {
+                $ret = uploadOne($k,'Goods',array(
+                    array(650,650),
+                    array(350,350),
+                    array(50,50),
+                ));
+
+                if ($ret['ok'] == 1)
+                {
+                    $gpModel->add(array(
+                        'pic' => $ret['images'][0],
+                        'big_pic' => $ret['images'][1],
+                        'mid_pic' => $ret['images'][2],
+                        'sm_pic' => $ret['images'][3],
+                        'goods_id' => $data['id'],
+                    ));
+                }
+            }
+        }
+
+        /********处理会员价格*********/
         $mp = I('post.member_price');
         $mpModel = D('member_price');
         foreach ($mp as $k => $v)
@@ -138,6 +279,31 @@ class GoodsModel extends Model
     {
         /*************搜索***************/
         $where = array();
+        //主分类的搜索
+        $brandId = I('get.brand_id');
+        if ($brandId)
+        {
+            $where['a.brand_id'] = array('eq',$brandId);
+        }
+
+        $catId = I('get.cat_id');
+        if ($catId)
+        {
+            $gids = $this->getGoodsIdByCatId($catId);
+            $where['a.id'] = array('in',$gids);
+        }
+
+        $catId = I('get.cat_id');
+        if ($catId)
+        {
+            //先取出所有子分类的ID
+            $catModel = D('category');
+            $children = $catModel->getChildren($catId);
+            $children[] = $catId;
+            //搜索出所有这些分类下的商品
+            $where['a.cat_id'] = array('IN',$children);
+        }
+
         //品牌
         $brandId = I('get.brand_id');
         if ($brandId)
@@ -224,11 +390,15 @@ class GoodsModel extends Model
 
         //取某一页的数据
         $data = $this->order("$orderby $orderway")//排序
-            ->field('a. *,b.brand_name')
+            ->field('a. *,b.brand_name,c.cat_name,GROUP_CONCAT(e.cat_name SEPARATOR "<br />") ext_cat_name')
             ->alias('a')
-            ->join('LEFT JOIN __BRAND__ b ON a.brand_id=b.id')
+            ->join('LEFT JOIN __BRAND__ b ON a.brand_id=b.id
+                    LEFT JOIN __CATEGORY__ c ON a.cat_id=c.id
+                    LEFT JOIN __GOODS_CAT__ d ON a.id=d.goods_id
+                    LEFT JOIN __CATEGORY__ e ON d.cat_id=e.id')
             ->where($where)
             ->limit($pageObj->firstRow.','.$pageObj->listRows)
+            ->group('a.id')
             ->select();
 
         //返回数据
@@ -236,5 +406,49 @@ class GoodsModel extends Model
             'data' => $data, //数据
             'page' => $pageString,  //翻页字符串
         );
+    }
+
+    /**
+     * 取出一个分类下所有商品的ID
+     */
+    public function getGoodsIdByCatId($catId)
+    {
+        //先取出所有子分类的ID
+        $catModel = D('category');
+        $children = $catModel->getChildren($catId);
+        //和子分类放一起
+        $children[] = $catId;
+        /*********************取出子分类或扩展分类在这些分类中的商品**************/
+        //取出主分类下的商品ID
+        $gids = $this->field('id')->where(array(
+            'cat_id' => array('in',$children),//主分类下的商品
+        ))->select();
+
+        //取出扩展分类下的商品id
+        $gcModel = D('goods_cat');
+        $gidsl = $gcModel->field('DISTINCT goods_id id')->where(
+            array(
+                'cat_id' =>array('IN',$children)
+            ))->select();
+
+        //把主分类的ID和扩展分类下的商品ID合并成一个二维数组【两个都不为空时合并，否则取出不为空的数组】
+        if ($gids && $gidsl)
+        {
+            $gids = array_merge($gids,$gidsl);
+        }
+        elseif($gidsl)
+        {
+            $gids = $gidsl;
+        }
+        //二维转一维
+        $id = array();
+        foreach ($gids as $k => $v)
+        {
+            if (!in_array($v['id'],$id))
+            {
+                $id[] = $v['id'];
+            }
+        }
+        return $id;
     }
 }

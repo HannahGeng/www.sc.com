@@ -23,6 +23,16 @@
 <!--搜索表单-->
 <div class="form-div">
     <form action="/index.php/Admin/Goods/lst" method="GET" name="searchForm">
+        <p>
+            分类：
+            <?php $catId = I('get.cat_id'); ?>
+            <select name="cat_id">
+                <option value="">选择分类</option>
+                <?php foreach ($catData as $k => $v): if($v['id'] == $catId) $select = 'selected="selected"'; else $select = ''; ?>
+                <option <?php echo $select; ?> value="<?php echo $v['id']; ?>"><?php echo str_repeat('-',8*$v['level']) .$v['cat_name']; ?></option>
+                <?php endforeach; ?>
+            </select>
+        </p>
         <P>
             品牌：
             <?php buildSelect('brand','brand_id','id','brand_name',I('get.brand_id')); ?>
@@ -68,6 +78,8 @@
         <table cellpadding="3" cellspacing="1">
             <tr>
                 <th>编号</th>
+                <th>主分类</th>
+                <th>扩展分类</th>
                 <th>品牌</th>
                 <th>商品名称</th>
                 <th>logo</th>
@@ -80,6 +92,8 @@
             <?php foreach ($data as $k => $v): ?>
             <tr class="tron">
                 <td align="center"><?php echo $v['id']; ?></td>
+                <td align="center"><?php echo $v['cat_name']; ?></td>
+                <td align="center"><?php echo $v['ext_cat_name']; ?></td>
                 <td align="center"><?php echo $v['brand_name']; ?></td>
                 <td align="center" class="first-cell"><span><?php echo $v['goods_name']; ?></span></td>
                 <td align="center"><img src="/Public/Uploads/<?php echo $v['sm_logo']; ?>" /></td>

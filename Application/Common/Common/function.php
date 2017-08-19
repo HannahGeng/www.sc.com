@@ -43,16 +43,20 @@ function uploadOne($imgName, $dirName, $thumb = array())
             'maxSize' => $ic['maxSize'],
             'exts' => $ic['exts'],
         ));// 实例化上传类
+
         $upload->savePath = $dirName . '/'; // 图片二级目录的名称
+
         // 上传文件
         // 上传时指定一个要上传的图片的名称，否则会把表单中所有的图片都处理，之后再想其他图片时就再找不到图片了
         $info   =   $upload->upload(array($imgName=>$_FILES[$imgName]));
+
         if(!$info)
         {
             return array(
                 'ok' => 0,
                 'error' => $upload->getError(),
             );
+
         }
         else
         {

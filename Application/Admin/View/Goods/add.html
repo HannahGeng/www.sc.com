@@ -15,6 +15,34 @@
            <!--通用信息-->
             <table width="90%" class="tab-table" align="center">
                 <tr>
+                    <td class="label">主分类：</td>
+                    <td>
+                        <select name="cat_id">
+                            <option value="">选择分类</option>
+                            <?php foreach ($catData as $k => $v): ?>
+                            <option value="<?php echo $v['id']; ?>"><?php echo str_repeat('-',8*$v['level']) . $v['cat_name']; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="require-field"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">扩展分类：<input onclick="$('#cat_list').append($('#cat_list').find('li').eq(0).clone());" type="button" id="btn_add_cat" value="添加一个" /></td>
+                    <td>
+                        <ul id="cat_list">
+                            <li>
+                                <select name="ext_cat_id[]">
+                                    <option value="">选择分类</option>
+                                    <?php foreach ($catData as $k => $v): ?>
+                                    <option value="<?php echo $v['id']; ?>"><?php echo str_repeat('-',8*$v['level']) . $v['cat_name']; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </li>
+                        </ul>
+                        <span class="require-field"></span>
+                    </td>
+                </tr>
+                <tr>
                     <td class="label">所在品牌：</td>
                     <td>
                         <?php buildSelect('brand','brand_id','id','brand_name'); ?>
@@ -81,6 +109,9 @@
             <table style="display: none;" width="90%" class="tab-table" align="center">
                 <tr>
                     <td>
+                        <input id="btn_add_pic" type="button" value="添加一张" />
+                        <hr/>
+                        <ul id="ul_pic_list"></ul>
                     </td>
                 </tr>
             </table>
@@ -118,6 +149,13 @@
         //设置当前按钮选中
         $(this).removeClass("tab-back").addClass("tab-front");
 
+    });
+
+    //添加一张
+    $("#btn_add_pic").click(function()
+    {
+        var file = '<li><input type="file" name="pic[]" /></li>';
+        $("#ul_pic_list").append(file);
     });
 
 </script>

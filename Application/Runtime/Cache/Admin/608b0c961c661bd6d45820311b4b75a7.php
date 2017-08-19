@@ -19,6 +19,10 @@
 
 <!--  内容  -->
 
+<style>
+    #ul_pic_list li{margin:5px;list-style-type:none;}
+    #old_pic_list li{float:left;width:150px;height:150px;margin:5px;list-style-type:none;}
+</style>
 
 <div class="tab-div">
     <div id="tabbar-div">
@@ -35,6 +39,47 @@
         	<input type="hidden" name="id" value="<?php echo $data['id']; ?>" />
             <!--通用信息-->
             <table width="90%" class="tab-table" align="center">
+                <tr>
+                    <td class="label">主分类：</td>
+                    <td>
+                        <select name="cat_id">
+                            <option value="">选择分类</option>
+                            <?php foreach ($catData as $k => $v): if($v['id'] == $data['cat_id']) $select = 'selected="selected"'; else $select = ''; ?>
+                            <option <?php echo $select; ?> value="<?php echo $v['id']; ?>"><?php echo str_repeat('-', 8*$v['level']) . $v['cat_name']; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <span class="require-field"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="label">扩展分类：<input onclick="$('#cat_list').append($('#cat_list').find('li').eq(0).clone());" type="button" id="btn_add_cat" value="添加一个" /></td>
+                    <td>
+                        <ul id="cat_list">
+                            <!--如果有原分类就循环输出，否则默认输出一个下拉框-->
+                            <?php if($gcData): ?>
+                                <?php foreach ($gcData as $k1 => $v1): ?>
+                                <li>
+                                    <select name="ext_cat_id[]">
+                                        <option value="">选择分类</option>
+                                        <?php foreach ($catData as $k => $v): if($v['id'] == $v1['cat_id']) $select = 'selected="selected"'; else $select = ''; ?>
+                                        <option <?php echo $select; ?> value="<?php echo $v['id']; ?>"><?php echo str_repeat('-',8*$v['level']) . $v['cat_name']; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </li>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <li>
+                                <select name="ext_cat_id[]">
+                                    <option value="">选择分类</option>
+                                    <?php foreach ($catData as $k => $v): ?>
+                                    <option <?php echo $select; ?> value="<?php echo $v['id']; ?>"><?php echo str_repeat('-', 8*$v['level']) . $v['cat_name']; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </li>
+                        <?php endif; ?>
+                        </ul>
+                    </td>
+                </tr>
                 <tr>
                     <td class="label">所在品牌：</td>
                     <td>
@@ -106,6 +151,18 @@
             <table style="display: none;" width="90%" class="tab-table" align="center">
                 <tr>
                     <td>
+                        <input id="btn_add_pic" type="button" value="添加一张" />
+                        <hr/>
+                        <ul id="ul_pic_list"></ul>
+                        <hr />
+                        <ul id="old_pic_list">
+                            <?php foreach ($gpData as $k => $v): ?>
+                            <li>
+                                <input class="btn_del_pic" type="button" value="删除"><br/>
+                                <?php showImage($v['mid_pic'], 150); ?>
+                            </li>
+                            <?php endforeach; ?>
+                        </ul>
                     </td>
                 </tr>
             </table>
@@ -142,6 +199,40 @@ $("#tabbar-div p span").click(function ()
     //设置当前按钮选中
     $(this).removeClass("tab-back").addClass("tab-front");
 
+});
+
+//添加一张
+$("#btn_add_pic").click(function()
+{
+    var file = '<li><input type="file" name="pic[]" /></li>';
+    $("#ul_pic_list").append(file);
+});
+
+//删除图片
+$(".btn_del_pic").click(function(){
+    if(confirm('确定要删除吗？'))
+    {
+        // 先选中删除按钮所在的li标签
+        var li = $(this).parent();
+        // 从这个按钮上获取pic_id属性
+        var pid = $(this).attr("pic_id");
+        /**
+         php中的大U函数三个参数：
+         U('ajaxDelPic')                    ==>   /index.php/Admin/Goods/ajaxDelPic.html
+         U('ajaxDelPic?id=1')                  ==>   /index.php/Admin/Goods/ajaxDelPic/id/1.html
+         U('ajaxDelPic', array('id'=>1))      ==>   /index.php/Admin/Goods/ajaxDelPic/id/1.html
+         U('ajaxDelPic', array('id'=>1), FALSE)      ==>   /index.php/Admin/Goods/ajaxDelPic/id/1
+         **/
+        $.ajax({
+            type : "GET",
+            url : "<?php echo U('ajaxDelPic', '', FALSE); ?>/picid/"+pid,
+            success : function(data)
+            {
+                // 把图片从页面中删除掉
+                li.remove();
+            }
+        });
+    }
 });
 
 </script>

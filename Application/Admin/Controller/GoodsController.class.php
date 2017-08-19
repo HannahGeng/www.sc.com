@@ -11,6 +11,8 @@ class GoodsController extends Controller
         //判断用户是否提交了表单
         if (IS_POST)
         {
+            set_time_limit(0);
+
             $model = D('goods');
 
             //create方法：接收数据并保存到模型中；根据模型中定义的规则验证表单
@@ -42,10 +44,15 @@ class GoodsController extends Controller
         $mlModel = D('member_level');
         $mlData = $mlModel->select();
 
+        //取出所有的分类做下拉框
+        $catModel = D('category');
+        $catData = $catModel->getTree();
+
         // 设置页面信息
         $this->assign(array(
             'brandData'   => $brandData,
             'mlData'      => $mlData,
+            'catData'     => $catData,
             '_page_title' => '添加新商品',
             '_page_btn_name' => '商品列表',
             '_page_btn_link' => U('lst'),
@@ -64,8 +71,13 @@ class GoodsController extends Controller
 
         $this->assign($data);
 
+        //取出所有的分类做下拉框
+        $catModel = D('category');
+        $catData = $catModel->getTree();
+
         // 设置页面信息
         $this->assign(array(
+            'catData'     => $catData,
             '_page_title' => '商品列表',
             '_page_btn_name' => '添加新商品',
             '_page_btn_link' => U('add'),
@@ -131,10 +143,29 @@ class GoodsController extends Controller
         $brandModel = D('brand');
         $brandData = $brandModel->select();
 
+        //取出相册中现有的图片
+        $gpModel = D(goods_pic);
+        $gpdata = $gpModel->field('id,mid_pic')->where(array(
+            'goods_id' => array('eq',$id),
+        ))->select();
+
+        //取出所有的分类做下拉框
+        $catModel = D('category');
+        $catData = $catModel->getTree();
+
+        //取出扩展分类
+        $gcModel = D('goods_cat');
+        $gcData = $gcModel->field('cat_id')->where(array(
+            'goods_id' => array('eq',$id),
+        ))->select();
+
         $this->assign(array(
+                'catData'   => $catData,
                 'mlData'    => $mlData,
                 'mpData'    => $_mpData,
                 'brandData' => $brandData,
+                'gpData'    => $gpdata,
+                'gcData'    => $gcData,
                 '_page_title' => '修改商品',
                 '_page_btn_name' => '商品列表',
                 '_page_btn_link' => U('lst'),
@@ -157,5 +188,18 @@ class GoodsController extends Controller
         {
             $this->error('删除失败！原因：'.$model->getError());
         }
+    }
+
+    //处理AJAX删除图片请求
+    public function ajaxDelPic()
+    {
+        $picId = I('get.picid');
+        //根据id从硬盘上删除图片
+        $gpModel = D('goods_pic');
+        $pic = $gpModel->field('pic,sm_pic,mid_pic,big_pic')->find($picId);
+        //从硬盘上删除图片
+        deleteImage($pic);
+        //从数据库中删除记录
+        $gpModel->delete($picId);
     }
 }

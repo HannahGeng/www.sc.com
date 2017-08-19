@@ -19,10 +19,12 @@ create table p39_goods
 	big_logo varchar(150) not null default '' comment '大图',
 	mbig_logo varchar(150) not null default '' comment '更大图',
 	brand_id mediumint unsigned not null default '0' comment '品牌id',
+	cat_id mediumint unsigned not null default '0' comment '主分类Id',
 	primary key (id),
 	key shop_price(shop_price),
 	key addtime(addtime),
 	key brand_id(brand_id),
+	key cat_id(cat_id),
 	key is_on_sale(is_on_sale)
 )engine=InnoDB default charset=utf8 comment '商品';
 
@@ -69,9 +71,23 @@ create table p39_goods_pic
 	key goods_id(goods_id)
 )engine=InnoDB default charset=utf8 comment '商品相册';
 
+drop table if exists p39_category;
+create table p39_category
+(
+	id mediumint unsigned not null auto_increment comment 'Id',
+	cat_name varchar(30) not null comment '分类名称',
+	parent_id mediumint unsigned not null default '0' comment '上级分类的Id,0:顶级分类',
+	primary key (id)
+)engine=InnoDB default charset=utf8 comment '分类';
 
-
-
+drop table if exists p39_goods_cat;
+create table p39_goods_cat
+(
+	cat_id mediumint unsigned not null comment '分类id',
+	goods_id mediumint unsigned not null comment '商品Id',
+	key goods_id(goods_id),
+	key cat_id(cat_id)
+)engine=InnoDB default charset=utf8 comment '商品扩展分类';
 
 
 
