@@ -190,6 +190,12 @@ class GoodsModel extends Model
     {
         $id = $options['where']['id'];//要删除的商品id
 
+        /************删除商品库存量**********/
+        $gnModel = D('goods_number');
+        $gnModel->where(array(
+           'goods_id' => array('eq',$id),
+        ))->delete();
+
         /************删除扩展分类**********/
         $gcModel = D('goods_cat');
         $gcModel->where(array(

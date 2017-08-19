@@ -11,9 +11,6 @@ class GoodsController extends Controller
         //判断用户是否提交了表单
         if (IS_POST)
         {
-            dump($_POST);
-            exit();
-
             set_time_limit(0);
 
             $model = D('goods');
@@ -201,6 +198,91 @@ class GoodsController extends Controller
         {
             $this->error('删除失败！原因：'.$model->getError());
         }
+    }
+
+    //商品库存量
+    public function goods_number()
+    {
+        //接收商品ID
+        $id = I('get.id');
+        $gnModel = D('goods_number');
+
+        //处理表单
+        if (IS_POST)
+        {
+            //先删除原库存
+            $gnModel->where(array(
+                'goods_id' => array('eq',$id),
+            ))->delete();
+
+            $gaid = I('post.goods_attr_id');
+            $gn = I('post.goods_number');
+            //先计算出商品属性ID和库存量的比例
+            $gaidCount = count($gaid);
+            $gnCount = count($gn);
+            $rate = $gaidCount/$gnCount;
+
+            //循环库存量
+            $_i = 0;
+            foreach($gn as $k => $v)
+            {
+                $_goodsAttrId = array();
+                for($i = 0;$i < $rate; $i++)
+                {
+                    $_goodsAttrId[] = $gaid[$_i];
+                    $_i++;
+                }
+
+                //先升序排序
+                sort($_goodsAttrId,SORT_NUMERIC);
+
+                //把取出来的商品属性ID转化为字符串
+                $_goodsAttrId = (string)implode(',',$_goodsAttrId);
+                $gnModel->add(array(
+                   'goods_id' => $id,
+                    'goods_attr_id' => $_goodsAttrId,
+                    'goods_number' => $v,
+                ));
+            }
+
+            $this->success('设置成功！', U('goods_number?id='.I('get.id')));
+            exit();
+        }
+
+        //根据商品id取出这件商品所有可选属性的值
+        $gaModel = D('goods_attr');
+        $gaData = $gaModel->alias('a')
+            ->field('a.*,b.attr_name')
+            ->join('LEFT JOIN __ATTRIBUTE__ b ON a.attr_id=b.id')
+            ->where(array(
+                'a.goods_id' => array('eq', $id),
+                'b.attr_type' => array('eq', '可选'),
+            ))->select();
+
+        $_gaData = array();
+        foreach ($gaData as $k => $v)
+        {
+            $_gaData[$v['attr_name']][] = $v;
+        }
+
+        //取出这件商品已经设置过的库存量
+        $gnData = $gnModel->where(array(
+           'goods_id' => $id,
+        ))->select();
+
+        $this->assign(array(
+           'gaData' => $_gaData,
+            'gnData' => $gnData,
+        ));
+
+        //设置页面信息
+        $this->assign(array(
+           '_page_title' => '库存量',
+            '_page_btn_name' => '返回列表',
+            '_page_btn_link' => U('lst'),
+        ));
+
+        $this->display();
     }
 
     //处理AJAX删除图片请求
