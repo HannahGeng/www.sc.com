@@ -5,10 +5,10 @@ use Think\Model;
 class GoodsModel extends Model
 {
     //添加时调用create方法允许接受的字段
-    protected $insertFields = 'brand_id,goods_name,market_price,shop_price,is_on_sale,goods_desc,cat_id';
+    protected $insertFields = 'brand_id,goods_name,market_price,shop_price,is_on_sale,goods_desc,cat_id,type_id';
 
     //修改时调用create方法允许接受的字段
-    protected $updateFields = 'brand_id,id,goods_name,market_price,shop_price,is_on_sale,goods_desc,cat_id';
+    protected $updateFields = 'brand_id,id,goods_name,market_price,shop_price,is_on_sale,goods_desc,cat_id,type_id';
 
     //定义验证规则
     protected $_validate = array(
@@ -133,6 +133,34 @@ class GoodsModel extends Model
             }
         }
 
+        /********************修改商品属性**********************/
+        $gaid = I('post.goods_attr_id');
+        $attrValue = I('post.attr_value');
+        $gaModel = D('goods_attr');
+        $_i = 0;//循环次数
+        foreach ($attrValue as $k => $v)
+        {
+            foreach ($v as $k1 => $v1)
+            {
+                if ($gaid[$_i] == '')
+                {
+                    $gaModel->add(array(
+                       'goods_id' => $id,
+                        'attr_id' => $k,
+                        'attr_value' => $v1,
+                    ));
+                }
+                else
+                {
+                    $gaModel->where(array(
+                        'id' => array('eq',$gaid[$_i]),
+                    ))->setField('attr_value',$v);
+                }
+                $_i ++;
+            }
+
+        }
+
         //判断有没有选择图片
         if ($_FILES['logo']['error'] == 0)
         {
@@ -165,6 +193,12 @@ class GoodsModel extends Model
         /************删除扩展分类**********/
         $gcModel = D('goods_cat');
         $gcModel->where(array(
+           'goods_id' => array('eq',$id),
+        ))->delete();
+
+        /************删除商品属性**********/
+        $gaModel = D('goods_attr');
+        $gaModel->where(array(
            'goods_id' => array('eq',$id),
         ))->delete();
 
@@ -269,6 +303,23 @@ class GoodsModel extends Model
                     'price' => $_v,
                     'level_id' => $k,
                     'goods_id' => $data['id'],
+                ));
+            }
+        }
+
+        /********处理商品属性的代码*********/
+        $attrValue = I('post.attr_value');
+        $gaModel = D('goods_attr');
+        foreach($attrValue as $k => $v)
+        {
+            //把属性的数组去重
+            $v = array_unique($v);
+            foreach ($v as $k1 => $v1)
+            {
+                $gaModel->add(array(
+                    'goods_id' => $data['id'],
+                    'attr_id' => $k,
+                    'attr_value' => $v1,
                 ));
             }
         }

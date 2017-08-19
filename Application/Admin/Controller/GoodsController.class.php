@@ -11,6 +11,9 @@ class GoodsController extends Controller
         //判断用户是否提交了表单
         if (IS_POST)
         {
+            dump($_POST);
+            exit();
+
             set_time_limit(0);
 
             $model = D('goods');
@@ -159,6 +162,15 @@ class GoodsController extends Controller
             'goods_id' => array('eq',$id),
         ))->select();
 
+        //取出这件商品已经设置了的属性值
+        $attrModel = D('attribute');
+        $attrData = $attrModel->alias('a')
+            ->field('a.id attr_id,a.attr_name,a.attr_type,a.attr_option_values,b.attr_value,b.id')
+            ->join('LEFT JOIN __GOODS_ATTR__ b ON (a.id=b.attr_id AND b.goods_id='.$id.')')
+            ->where(array(
+                'a.type_id' => array('eq', $data['type_id']),
+            ))->select();
+
         $this->assign(array(
                 'catData'   => $catData,
                 'mlData'    => $mlData,
@@ -166,6 +178,7 @@ class GoodsController extends Controller
                 'brandData' => $brandData,
                 'gpData'    => $gpdata,
                 'gcData'    => $gcData,
+                'gaData'  => $attrData,
                 '_page_title' => '修改商品',
                 '_page_btn_name' => '商品列表',
                 '_page_btn_link' => U('lst'),
@@ -202,4 +215,30 @@ class GoodsController extends Controller
         //从数据库中删除记录
         $gpModel->delete($picId);
     }
+
+    //处理获取属性的AJAX请求
+    public function ajaxGetAttr()
+    {
+        $typeId = I('get.type_id');
+        $attrModel = D('Attribute');
+        $attrData = $attrModel->where(array(
+            'type_id' => array('eq',$typeId),
+        ))->select();
+        echo json_encode($attrData);
+    }
+
+    //处理删除属性
+    public function ajaxDelAttr()
+    {
+        $goodsId = addslashes(I('get.goods_id'));
+        $gaid = addslashes(I('get.gaid'));
+        $gaModel = D('goods_attr');
+        $gaModel->delete($gaid);
+        //删除相关库存量数据
+        $gnModel = D('goods_number');
+        $gnModel->where(array(
+            'goods_id' => array('EXP',"=$goodsId or AND FIND_IN_SET($gaid,attr_list)"),
+        ))->delete();
+    }
+
 }
