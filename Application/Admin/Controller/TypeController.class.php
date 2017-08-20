@@ -1,7 +1,7 @@
 <?php
 namespace Admin\Controller;
 use Think\Controller;
-class TypeController extends Controller 
+class TypeController extends BaseController
 {
     public function add()
     {
